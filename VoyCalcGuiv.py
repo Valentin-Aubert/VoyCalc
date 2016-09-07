@@ -1,145 +1,154 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
- 
-from tkinter import * 
-from tkinter.messagebox import *
-from functools import partial
+#!/usr/bin/python3.4
+# -*-coding: utf-8 -*
 
-## -- Variables -- ##
-prixdulitre=0
-kms=0
-reduction=0
-consomation=0
+import tkinter as tk
+import re
+
+SEP_DEC = ',' # Séparateur des décimaux
+
+def bonusReduction(reduction, kms) :
+    return round(reduction * kms, 2)
+   
+def estimationCoutTrajet(kms, consommation, prixDuLitre) :
+    return round(kms * consommation * prixDuLitre / 100, 2)
+   
+def estimationConsommationTrajet(kms, consommation) :
+    return round(kms * consommation / 100, 2)
+
+def estimationConsommationTrajetTotal(kms, consommation, reduction) :
+    return round((kms * consommation / 100 ) - (reduction * kms), 2)
+
+def afficherResultats(objet) :
+    # Ici on vérifie les valeurs des variables tkinter que l'on a défini.
+    # Et on a uniquement besoin du widget tkinter auquel on a affilié les StringVars pour y avoir acccès.
+    # (dans le code on a utilisé la fenêtre root)
+    # variables définies : prix, kms, conso, reduc, resultat
+    # On ne fait rien, aucun des champs requis n'ont été renseignés
+    if not objet.getvar('prix') and not objet.getvar('kms') and not objet.getvar('conso') and not objet.getvar('reduc') :
+        return
+    prix = objet.getvar('prix')
+    kms = objet.getvar('kms')
+    conso = objet.getvar('conso')
+    reduc = objet.getvar('reduc')
+
+    if SEP_DEC != '.' :
+        prix = prix.replace(SEP_DEC, '.')
+        kms = kms.replace(SEP_DEC, '.')
+        conso = conso.replace(SEP_DEC, '.')
+        reduc = reduc.replace(SEP_DEC, '.')
+       
+    resultats = []
+    # Contrôles des valeurs
+    if not prix :
+        resultats.append('Vous devez renseigner le prix au litre du carburant.')
+    elif not re.match(r'^\d\.\d{2}$', prix) :
+        resultats.append('Le prix du carburant doit être de la forme 0{}00 .'.format(SEP_DEC))
+    
+    if not kms :
+        resultats.append('Vous devez renseigner le nombre de kilomètres à parcourir.')
+    elif not re.match('^\d+(\.\d\d?)?$', kms) :
+        resultats.append('Kilomètres doit être un entier, ou un nombre décimal à un ou 2 décimaux.')
+       
+    if not conso :
+        resultats.append('Vous devez renseigner la consommation moyenne.')
+    elif not re.match('^\d+(\.\d\d?)?$', conso) :
+        resultats.append('La consommation doit être un entier, ou un décimal.')
+       
+    if not reduc : 
+        resultats.append('Vous devez renseigner votre réduction, 0 si aucune.')
+    elif not re.match(r'^\d\.\d{2}$', reduc) :
+        resultats.append('La reduction doit être de forme 0{}00 .'.format(SEP_DEC))
+    
+    # Erreurs rencontrées
+    if resultats :
+        objet.setvar('resultat', '\n'.join(resultats))
+        return
+       
+    # Conversion des strings en float pour effectuer les calculs
+    prixf = float(prix)
+    kmsf = float(kms)
+    consof = float(conso)
+    reducf = float(reduc)
+   
+    coutTrajet = str(estimationCoutTrajet(kmsf, consof, prixf))
+    consoTrajet = str(estimationConsommationTrajet(kmsf, consof))
+    consoTrajetTot = str(estimationConsommationTrajetTotal(kmsf, consof, reducf))
+    reduction = str(bonusReduction(kmsf, reducf))
+
+    if SEP_DEC != '.' :
+        coutTrajet = coutTrajet.replace('.', SEP_DEC)
+        consoTrajet = consoTrajet.replace('.', SEP_DEC)
+        consoTrajetTot = consoTrajetTot.replace('.', SEP_DEC)
+
+    resultats.append("Coût du voyage estimé : {}€".format(consoTrajetTot))
+    resultats.append("Coût brut du voyage estimé : {}€".format(coutTrajet))
+    if reduc :
+        #XXX Ajouter à resultats les 2 messages supplémentaires
+        pass   
+    resultats.append('Consommation : {}L'.format(consoTrajet))
+    resultats.append('Réduction : {}€ '.format(reduction))
+   
+    objet.setvar('resultat', '\n'.join(resultats))
+
+fenetre = tk.Tk()
+fenetre.title = "VoyCalc"
+fenetre['bg'] = "dark slate grey"
+
+cadre = tk.Frame(fenetre, bg="dark slate grey" )
+cadre.grid()
+cadre.columnconfigure(2, weight=1)
+
+canvas = tk.Canvas(cadre, width=500, height=50, bg="dark slate grey" )
+canvas.grid(row=1, column=1, columnspan=2)
+
+photo = tk.PhotoImage(file="VoyCalc.png" )
+canvas.create_image(0, 0, anchor=tk.NW, image=photo)
+
+labelInfo = tk.Label(cadre, text="Calcul du coût du carburant d'un trajet", bg="dark slate grey" )
+labelInfo.grid(row=2, column=1, columnspan=2, pady=20)
+
+labelPrix = tk.Label(cadre, text="Prix au litre du carburant :", bg="dark slate grey" )
+labelPrix.grid(row=3, column=1, padx=15, pady=5, sticky=tk.E)
 
 
-## -- Fonctions -- ##
-def cout_deplacement (kms,consomation,prixdulitre):
-	return kms * consomation * prixdulitre / 100
-	labeldd.config(text=texte)
+varPrix = tk.StringVar(fenetre, "", "prix" ) # tkinter Variable peut prendre 3 arguments => StringVar(master, value, name)
+entreePrix = tk.Entry(cadre, textvariable=varPrix, width=10, bg="dark slate grey" )
+entreePrix.grid(row=3, column=2, sticky=tk.W)
+entreePrix.columnconfigure(1, weight=5)
 
-def recupere():
-    prixdulitre = prixlitreE.get()
-    kms = kmsE.get()
-    reduction = reductionE.get()
-    consomation = consomationE.get()
 
-def bonus_reduction (reduction,kms):
-	if reduction == 0 :
-		return 0
-	elif reduction > 0 :
-		return reduction * kms
-	elif reduction > 10 :
-		return "Erreur, le taux de réduction ne peux être au delà de 10€ du km."
-	else :
-		return "Erreur, le taux de réduction doit être compris entre 0 et 10€."
+labelKms = tk.Label(cadre, text="Nombre de kilomètres à parcourir :", bg="dark slate grey" )
+labelKms.grid(row=4, column=1, padx=15, pady=5, sticky=tk.E)
 
-def cout_total ():
-		return cout_deplacement(kms,consomation,prixdulitre)-bonus_reduction(reduction,kms)
+varKms = tk.StringVar(fenetre, "", "kms" )
 
-cout_deplacement_1 = partial(cout_deplacement, kms, consomation, prixdulitre)
-cout_deplacement_1()
+entreeKms = tk.Entry(cadre, textvariable=varKms, width=10, bg="dark slate grey" )
+entreeKms.grid(row=4, column=2, sticky=tk.W)
 
-## -- GUI -- ##
-fenetre = Tk()
-fenetre.title('VoyCalc')
 
-## -- Canvas -- ##
-photo = PhotoImage(file="VoyCalc.png")
-canvas = Canvas(fenetre,width=500, height=50)
-canvas.create_image(0, 0, anchor=NW, image=photo)
+labelConso = tk.Label(cadre, text="Consommation (litres/100) :", bg="dark slate grey" )
+labelConso.grid(row=5, column=1, padx=15, pady=5, sticky=tk.E)
 
-## -- Labels -- ## 
-labeldd = Label(fenetre, text='l')
-label = Label(fenetre, text="Hello World")
-labelPrix = Label (fenetre, text="Saisir un prix : ")
-labelKms = Label (fenetre, text="Entrez le nombre de kms à parcourir : ")
-labelConso = Label (fenetre, text="Entrez votre consomation moyenne : ")
-labelReduc = Label (fenetre, text="Entrez une réduction : ")
+varConso = tk.StringVar(fenetre, "", "conso" )
+entreeConso = tk.Entry(cadre, textvariable=varConso, width=10, bg="dark slate grey" )
+entreeConso.grid(row=5, column=2, sticky=tk.W)
 
-## -- Entrée / Input -- ##
-prixdulitre=0
-value = StringVar()
-value.set("Ici !")
-prixlitreE = Entry(fenetre, textvariable=prixdulitre, width=10)
-kms=1
-value = StringVar()
-value.set("Ici !")
-kmsE = Entry(fenetre, textvariable=kms, width=10)
-consomation=2
-value = StringVar()
-value.set("Ici !")
-consomationE = Entry(fenetre, textvariable=consomation, width=10)
-reduction=3
-valueRed = StringVar()
-valueRed.set("Ici !")
-reductionE = Entry(fenetre, textvariable=reduction, width=10)
+labelReduc= tk.Label(cadre, text="Réduction (optionnel) :", bg="dark slate grey" )
+labelReduc.grid(row=6, column=1, padx=15, pady=5, sticky=tk.E)
 
-## Boutons 
-boutonValid = Button(fenetre, text = 'Valider', relief=FLAT, command=recupere)
-bouttonCalc = Button(fenetre, text ='Calculer', relief=FLAT)
-bouttonQuit = Button(fenetre, text ='Quitter', relief=FLAT, command=fenetre.quit)
-btttntest = Button (fenetre, text='Test', command=partial(cout_deplacement, kms, consomation, prixdulitre))
+varReduc = tk.StringVar(fenetre, "", "reduc" )
 
-## -- Organisation Fenetre -- ##
-canvas.grid(row =0, column =0)
-label.grid(row =1)
-labelPrix.grid(row =2, sticky=W)
-prixlitreE.grid(row =2)
-labelKms.grid(row =3, sticky=W)
-kmsE.grid(row =3)
-labelConso.grid(row =4, sticky=W)
-consomationE.grid(row =4)
-labelReduc.grid(row =5, sticky=W)
-reductionE.grid(row =5)
-boutonValid.grid (row = 6)
-labeldd.grid(row=7)
-btttntest.grid(row=8)
-bouttonCalc.grid(row = 9, sticky= W)
-bouttonQuit.grid(row = 9,sticky=E)
+entreeReduc = tk.Entry(cadre, textvariable=varReduc, width=10, bg="dark slate grey" )
+entreeReduc.grid(row=6, column=2, sticky=tk.W)
+varResultat = tk.StringVar(fenetre, "", "resultat" )
+
+labelResultat = tk.Label(cadre, textvariable=varResultat, width=70, height=4, justify=tk.LEFT, bg="dark slate grey" )
+labelResultat.grid(row=8, column=1, columnspan=2)
+
+boutonCalcul = tk.Button(cadre, text="Calculer", relief="flat", command=lambda f=fenetre : afficherResultats(f))
+boutonCalcul.grid(row=7, column=1, columnspan=2, pady=20)
+
+boutonQuit = tk.Button(cadre, text="Quiter", relief="flat", command=fenetre.quit)
+boutonQuit.grid(row=9, columnspan=4, pady=20)
 
 fenetre.mainloop()
-
-"""
-## PROGRAME EQUIVALENT SANS GUI ##
-
-print ""
-print "###############################################"
-print "## MERCI DE RENSEIGNER LES DIFFERENTS CHAMPS ##"
-print "###############################################"
-print ""
-
-prixdulittre = input("Entrez le prix au littre de votre carburant : ")
-kms = input("Entrez le nombre de killomètres à parcourir : ")
-consomation = input ("Entrez votre consomation de carburant moyenne sur 100kms : ")
-reduction = input ("Entrez votre réduction au km (0 si aucune) : ")
-
-#Module de clacul du deplacement#
-def cout_deplacement (kms,consomation,prixdulittre):
-	return kms * consomation * prixdulittre / 100
-
-
-def bonus_reduction (reduction,kms):
-	if reduction == 0 :
-		return 0
-	elif reduction > 0 :
-		return reduction * kms
-	elif reduction > 10 :
-		print "Erreur, le taux de réduction ne peux être au delà de 10€ du km."
-	else :
-		print "Erreur, le taux de réduction doit être compris entre 0 et 10€."
-
-def cout_total ():
-		return cout_deplacement(kms,consomation,prixdulittre)-bonus_reduction(reduction,kms)
-
-print ""
-print ""
-print "##############"
-print "## RESULTAT ##"
-print "##############"
-print ""
-print "Cout brut du voyage estimé :", cout_deplacement(kms,consomation,prixdulittre),"€"
-print "Cout estimé du voyage réduction comprise :",cout_total(),"€"
-print "Réduction : ", bonus_reduction(reduction,kms), "€"
-print "Consomation : ", cout_deplacement(consomation,kms,1),"L"
-
-"""
