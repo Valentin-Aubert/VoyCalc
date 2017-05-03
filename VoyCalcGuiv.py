@@ -4,7 +4,7 @@
 import tkinter as tk
 import re
 
-SEP_DEC = ',' # Séparateur des décimaux
+SEP_DEC = ','
 
 def bonusReduction(reduction, kms) :
     return round(reduction * kms, 2)
@@ -19,11 +19,6 @@ def estimationConsommationTrajetTotal(kms, consommation, reduction) :
     return round((kms * consommation / 100 ) - (reduction * kms), 2)
 
 def afficherResultats(objet) :
-    # Ici on vérifie les valeurs des variables tkinter que l'on a défini.
-    # Et on a uniquement besoin du widget tkinter auquel on a affilié les StringVars pour y avoir acccès.
-    # (dans le code on a utilisé la fenêtre root)
-    # variables définies : prix, kms, conso, reduc, resultat
-    # On ne fait rien, aucun des champs requis n'ont été renseignés
     if not objet.getvar('prix') and not objet.getvar('kms') and not objet.getvar('conso') and not objet.getvar('reduc') :
         return
     prix = objet.getvar('prix')
@@ -83,7 +78,6 @@ def afficherResultats(objet) :
     resultats.append("Coût du voyage estimé : {}€".format(consoTrajetTot))
     resultats.append("Coût brut du voyage estimé : {}€".format(coutTrajet))
     if reduc :
-        #XXX Ajouter à resultats les 2 messages supplémentaires
         pass   
     resultats.append('Consommation : {}L'.format(consoTrajet))
     resultats.append('Réduction : {}€ '.format(reduction))
